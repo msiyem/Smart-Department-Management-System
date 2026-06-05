@@ -1,7 +1,7 @@
-import pool from '../config/db.js';
-import asyncHandler from '../utils/asyncHandler.js';
-import { ApiError, ApiResponse } from '../utils/apiHelpers.js';
-import { calcGrade, calcCGPA } from '../utils/gradeCalc.js';
+import pool from "../config/db.js";
+import asyncHandler from "../utils/asyncHandler.js";
+import { ApiError, ApiResponse } from "../utils/apiHelpers.js";
+import { calcGrade, calcCGPA } from "../utils/gradeCalc.js";
 
 export const publishResult = asyncHandler(async (req, res) => {
   const { student_id, course_id, marks, remarks } = req.body;
@@ -24,17 +24,22 @@ export const publishResult = asyncHandler(async (req, res) => {
     [student_id],
   );
   const cgpa = calcCGPA(results);
-  await pool.query('UPDATE students SET cgpa = ? WHERE id = ?', [cgpa, student_id]);
+  await pool.query("UPDATE students SET cgpa = ? WHERE id = ?", [
+    cgpa,
+    student_id,
+  ]);
 
-  return res.status(201).json(new ApiResponse(201, 'Result published.', { grade, gpa, cgpa }));
+  return res
+    .status(201)
+    .json(new ApiResponse(201, "Result published.", { grade, gpa, cgpa }));
 });
 
 export const myResults = asyncHandler(async (req, res) => {
   const [[student]] = await pool.query(
-    'SELECT id, cgpa FROM students WHERE user_id = ?',
+    "SELECT id, cgpa FROM students WHERE user_id = ?",
     [req.user.id],
   );
-  if (!student) throw new ApiError(404, 'Student not found.');
+  if (!student) throw new ApiError(404, "Student not found.");
 
   const [rows] = await pool.query(
     `SELECT r.*, c.course_code, c.course_title, c.credit, c.semester
@@ -43,7 +48,12 @@ export const myResults = asyncHandler(async (req, res) => {
      ORDER BY c.semester, c.course_code`,
     [student.id],
   );
-  return res.json(new ApiResponse(200, 'Results fetched.', { results: rows, cgpa: student.cgpa }));
+  return res.json(
+    new ApiResponse(200, "Results fetched.", {
+      results: rows,
+      cgpa: student.cgpa,
+    }),
+  );
 });
 
 export const courseResults = asyncHandler(async (req, res) => {
@@ -58,5 +68,5 @@ export const courseResults = asyncHandler(async (req, res) => {
      ORDER BY r.marks DESC`,
     [course_id],
   );
-  return res.json(new ApiResponse(200, 'Course results fetched.', rows));
+  return res.json(new ApiResponse(200, "Course results fetched.", rows));
 });

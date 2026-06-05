@@ -3,7 +3,7 @@
 ## Stack
 - **Runtime**: Node.js 18+, Express 5
 - **DB**: MySQL 8 via `mysql2` (connection pool)
-- **Auth**: JWT (access 15m + refresh 7d), httpOnly cookies, token rotation
+- **Auth**: JWT (access 15m + refresh 7d), token rotation
 - **Uploads**: Cloudinary via `multer-storage-cloudinary`
 - **Validation**: Zod schemas on every mutation endpoint
 - **Logging**: Winston (console + file rotation)
