@@ -1,16 +1,21 @@
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth/getUser";
+import PrivateShell from "./PrivateShell";
 
 export default async function PrivateLayout({
-	children,
+  children,
 }: {
-	children: React.ReactNode;
+  children: React.ReactNode;
 }) {
-	const user = await getUser();
+  const user = await getUser();
 
-	if (!user) {
-		redirect("/");
-	}
+  if (!user) {
+    redirect("/");
+  }
 
-	return <>{children}</>;
+  return (
+    <PrivateShell user={user}>
+      {children}
+    </PrivateShell>
+  );
 }
