@@ -2,6 +2,88 @@ import pool from '../config/db.js';
 import cloudinary from '../config/cloudinary.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { ApiError, ApiResponse } from '../utils/apiHelpers.js';
+import bcrypt from 'bcrypt';
+
+export const createUser = asyncHandler(async (req, res) => {
+  const {
+    full_name,
+    email,
+    password,
+    role,
+    // student fields
+    registration_no,
+    session,
+    semester,
+    // teacher fields
+    designation,
+  } = req.body;
+
+  // 1. validate required fields
+  if (!full_name || !email || !password || !role) {
+    throw new ApiError(400, "Basic fields are required.");
+  }
+
+  const allowedRoles = ["student", "teacher"];
+  if (!allowedRoles.includes(role)) {
+    throw new ApiError(400, "Only student or teacher can be created.");
+  }
+
+  // 2. check duplicate email
+  const [[existing]] = await pool.query(
+    "SELECT id FROM users WHERE email = ?",
+    [email]
+  );
+
+  if (existing) {
+    throw new ApiError(409, "Email already exists.");
+  }
+
+  // 3. hash password
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  // 4. insert into users table
+  const [userResult] = await pool.query(
+    `INSERT INTO users (full_name, email, password, role)
+     VALUES (?, ?, ?, ?)`,
+    [full_name, email, hashedPassword, role]
+  );
+
+  const userId = userResult.insertId;
+
+  // 5. role-based insert
+  if (role === "student") {
+    if (!registration_no || !session || !semester) {
+      throw new ApiError(
+        400,
+        "registration_no, session, semester are required for student."
+      );
+    }
+
+    await pool.query(
+      `INSERT INTO students (user_id, registration_no, session, semester)
+       VALUES (?, ?, ?, ?)`,
+      [userId, registration_no, session, semester]
+    );
+  }
+
+  if (role === "teacher") {
+    await pool.query(
+      `INSERT INTO teachers (user_id, designation)
+       VALUES (?, ?)`,
+      [userId, designation || "Lecturer"]
+    );
+  }
+
+  // 6. response
+  return res.status(201).json(
+    new ApiResponse(201, "User created successfully.", {
+      id: userId,
+      full_name,
+      email,
+      role,
+    })
+  );
+});
 
 export const getAllUsers = asyncHandler(async (req, res) => {
   const { role, page = 1, limit = 20 } = req.query;
@@ -39,7 +121,7 @@ export const updateProfileImage = asyncHandler(async (req, res) => {
   const [[user]] = await pool.query('SELECT profile_image FROM users WHERE id = ?', [req.user.id]);
   if (user.profile_image) {
     const publicId = extractPublicId(user.profile_image);
-    if (publicId) await cloudinary.uploader.destroy(publicId).catch(() => {});
+    if (publicId) await cloudinary.uploader.destroy(publicId).catch(() => { });
   }
 
   await pool.query('UPDATE users SET profile_image = ? WHERE id = ?', [req.file.path, req.user.id]);
@@ -68,7 +150,7 @@ export const deleteUser = asyncHandler(async (req, res) => {
 function extractPublicId(url) {
   try {
     const parts = url.split('/');
-    const file  = parts.pop().split('.')[0];
+    const file = parts.pop().split('.')[0];
     const folder = parts.slice(parts.indexOf('upload') + 2).join('/');
     return `${folder}/${file}`;
   } catch { return null; }
