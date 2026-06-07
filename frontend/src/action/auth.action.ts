@@ -1,11 +1,13 @@
 "use server";
 
 import { LoginPayload, LoginResponse, User } from "@/lib/types";
-import { API_URL } from "@/lib/const";
+
 import { deleteCookie, getCookie, setCookie } from "@/lib/cookies";
 import { serverRequest } from "@/action/server-request.action";
+import { API_URL } from "@/lib/const";
 
 export const login = async (payload: LoginPayload): Promise<LoginResponse> => {
+
   try {
     const response = await fetch(`${API_URL}/auth/login`, {
       method: "POST",
@@ -54,6 +56,7 @@ export const logout = async () => {
 
     const data = await serverRequest("auth/logout", {
       method: "POST",
+      auth:true,
       body: JSON.stringify({ refreshToken, sessionId }),
     });
 
