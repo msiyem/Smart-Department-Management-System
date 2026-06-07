@@ -136,6 +136,18 @@ export const createRoutine = asyncHandler(async (req, res) => {
     ]
   );
 
+  await pool.query(
+    `
+    INSERT IGNORE INTO course_teachers
+    (
+      teacher_id,
+      course_id
+    )
+    VALUES (?, ?)
+  `,
+    [teacherId, course_id]
+  );
+
   return res.status(201).json(
     new ApiResponse(
       201,
@@ -190,7 +202,10 @@ export const getRoutine = asyncHandler(async (_req, res) => {
 export const deleteRoutine = asyncHandler(async (req, res) => {
   const [[slot]] = await pool.query(
     `
-    SELECT id
+    SELECT
+      id,
+      teacher_id,
+      course_id
     FROM class_routines
     WHERE id = ?
     `,
@@ -200,10 +215,11 @@ export const deleteRoutine = asyncHandler(async (req, res) => {
   if (!slot) {
     throw new ApiError(
       404,
-      'Routine slot not found.'
+      "Routine slot not found."
     );
   }
 
+  // Delete routine
   await pool.query(
     `
     DELETE FROM class_routines
@@ -212,10 +228,40 @@ export const deleteRoutine = asyncHandler(async (req, res) => {
     [req.params.id]
   );
 
+  // Check whether another routine still exists
+  const [remaining] = await pool.query(
+    `
+    SELECT id
+    FROM class_routines
+    WHERE teacher_id = ?
+      AND course_id = ?
+    LIMIT 1
+    `,
+    [
+      slot.teacher_id,
+      slot.course_id,
+    ]
+  );
+
+  // If no routines remain, remove course assignment
+  if (remaining.length === 0) {
+    await pool.query(
+      `
+      DELETE FROM course_teachers
+      WHERE teacher_id = ?
+        AND course_id = ?
+      `,
+      [
+        slot.teacher_id,
+        slot.course_id,
+      ]
+    );
+  }
+
   return res.json(
     new ApiResponse(
       200,
-      'Routine slot deleted.'
+      "Routine slot deleted."
     )
   );
 });

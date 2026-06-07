@@ -1,28 +1,58 @@
 import pool from "../config/db.js";
 import asyncHandler from "../utils/asyncHandler.js";
 import { ApiError, ApiResponse } from "../utils/apiHelpers.js";
+import { uploadToCloudinary } from "../utils/cloudinaryUpload.js";
 
 // ─── Create notice (admin / teacher) ─────────────────────────────────────────
 export const createNotice = asyncHandler(async (req, res) => {
-  const { title, description, priority } = req.body;
-  let attachment  = null;
+  const {
+    title,
+    description,
+    priority,
+  } = req.body;
+
+  let attachment = null;
 
   if (req.file) {
     const result = await uploadToCloudinary(
       req.file.buffer,
-      "dept-mgmt/assignments",
-      "auto",
+      "dept-mgmt/notices",
+      "auto"
     );
 
     attachment = result.secure_url;
   }
+
   const [result] = await pool.query(
-    "INSERT INTO notices (title, description, priority, attachment, created_by) VALUES (?,?,?,?,?)",
-    [title, description || null, priority || "medium", attachment, req.user.id],
+    `
+    INSERT INTO notices
+    (
+      title,
+      description,
+      attachment,
+      priority,
+      created_by
+    )
+    VALUES (?, ?, ?, ?, ?)
+    `,
+    [
+      title,
+      description || null,
+      attachment,
+      priority || "medium",
+      req.user.id,
+    ]
   );
-  return res
-    .status(201)
-    .json(new ApiResponse(201, "Notice published.", { id: result.insertId }));
+
+  return res.status(201).json(
+    new ApiResponse(
+      201,
+      "Notice published.",
+      {
+        id: result.insertId,
+      }
+    )
+  );
 });
 
 export const getNotices = asyncHandler(async (req, res) => {

@@ -5,8 +5,8 @@ import { ApiResponse } from '../utils/apiHelpers.js';
 export const adminDashboard = asyncHandler(async (_req, res) => {
   const [[{ total_students }]] = await pool.query('SELECT COUNT(*) total_students FROM students');
   const [[{ total_teachers }]] = await pool.query('SELECT COUNT(*) total_teachers FROM teachers');
-  const [[{ total_courses  }]] = await pool.query('SELECT COUNT(*) total_courses  FROM courses');
-  const [[{ total_notices  }]] = await pool.query('SELECT COUNT(*) total_notices  FROM notices');
+  const [[{ total_courses }]] = await pool.query('SELECT COUNT(*) total_courses  FROM courses');
+  const [[{ total_notices }]] = await pool.query('SELECT COUNT(*) total_notices  FROM notices');
 
   const [recentNotices] = await pool.query(
     'SELECT id, title, priority, created_at FROM notices ORDER BY created_at DESC LIMIT 5',
@@ -55,20 +55,79 @@ export const studentDashboard = asyncHandler(async (req, res) => {
 });
 
 export const teacherDashboard = asyncHandler(async (req, res) => {
-  const [[teacher]] = await pool.query('SELECT id FROM teachers WHERE user_id = ?', [req.user.id]);
-
-  const [[{ courses_teaching }]] = await pool.query(
-    'SELECT COUNT(*) courses_teaching FROM course_teachers WHERE teacher_id = ?',
-    [teacher.id],
+  const [[teacher]] = await pool.query(
+    'SELECT id FROM teachers WHERE user_id = ?',
+    [req.user.id]
   );
 
-  const [[{ total_assignments }]] = await pool.query(
-    'SELECT COUNT(*) total_assignments FROM assignments WHERE teacher_id = ?',
-    [teacher.id],
-  );
+  if (!teacher) {
+    throw new ApiError(404, 'Teacher profile not found');
+  }
 
-  return res.json(new ApiResponse(200, 'Teacher dashboard.', {
-    courses_teaching,
-    total_assignments,
-  }));
+  const today = new Date().toLocaleDateString('en-US', {
+    weekday: 'long',
+  });
+
+  const [
+    [[{ courses_teaching }]],
+    [[{ total_assignments }]],
+    [[{ total_students }]],
+    [[{ pending_submissions }]],
+    [[{ today_classes }]],
+  ] = await Promise.all([
+    pool.query(
+      `SELECT COUNT(*) AS courses_teaching
+       FROM course_teachers
+       WHERE teacher_id = ?`,
+      [teacher.id]
+    ),
+
+    pool.query(
+      `SELECT COUNT(*) AS total_assignments
+       FROM assignments
+       WHERE teacher_id = ?`,
+      [teacher.id]
+    ),
+
+    pool.query(
+      `
+      SELECT COUNT(DISTINCT e.student_id) AS total_students
+      FROM enrollments e
+      JOIN course_teachers ct ON ct.course_id = e.course_id
+      WHERE ct.teacher_id = ?
+      `,
+      [teacher.id]
+    ),
+
+    pool.query(
+      `
+      SELECT COUNT(*) AS pending_submissions
+      FROM assignment_submissions s
+      JOIN assignments a ON a.id = s.assignment_id
+      WHERE a.teacher_id = ?
+      AND s.graded_at IS NULL
+      `,
+      [teacher.id]
+    ),
+
+    pool.query(
+      `
+      SELECT COUNT(*) AS today_classes
+      FROM class_routines
+      WHERE teacher_id = ?
+      AND day = ?
+      `,
+      [teacher.id, today]
+    ),
+  ]);
+
+  return res.json(
+    new ApiResponse(200, "Teacher dashboard", {
+      courses_teaching,
+      total_assignments,
+      total_students,
+      pending_submissions,
+      today_classes,
+    })
+  );
 });

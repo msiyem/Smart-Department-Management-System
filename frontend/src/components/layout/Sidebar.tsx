@@ -39,14 +39,14 @@ const NAV: Record<Role, NavItem[]> = {
     { href: "/admin/courses", label: "Courses", icon: BookOpen },
     { href: "/admin/routines", label: "Routines", icon: Calendar },
     { href: "/admin/notices", label: "Notices", icon: Bell },
-    { href: "/admin/results", label: "Results", icon: BarChart3 },
+    // { href: "/admin/results", label: "Results", icon: BarChart3 },
   ],
 
   teacher: [
     { href: "/teacher", label: "Dashboard", icon: LayoutDashboard },
     { href: "/teacher/attendance", label: "Attendance", icon: CheckSquare },
     { href: "/teacher/assignments", label: "Assignments", icon: PenSquare },
-    { href: "/teacher/results", label: "Results", icon: BarChart3 },
+    // { href: "/teacher/results", label: "Results", icon: BarChart3 },
     { href: "/teacher/routine", label: "Routine", icon: Calendar },
   ],
 
@@ -55,7 +55,7 @@ const NAV: Record<Role, NavItem[]> = {
     { href: "/student/courses", label: "Courses", icon: BookMarked },
     { href: "/student/attendance", label: "Attendance", icon: CheckSquare },
     { href: "/student/assignments", label: "Assignments", icon: ClipboardList },
-    { href: "/student/results", label: "Results", icon: GraduationCap },
+    // { href: "/student/results", label: "Results", icon: GraduationCap },
     { href: "/student/notices", label: "Notices", icon: Bell },
     { href: "/student/routine", label: "Routine", icon: Calendar },
   ],

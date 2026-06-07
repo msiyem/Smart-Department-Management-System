@@ -134,6 +134,8 @@ CREATE TABLE IF NOT EXISTS course_teachers (
     FOREIGN KEY (course_id) REFERENCES courses(id) ON DELETE CASCADE
 );
 
+
+
 -- ------------------------------------------------------------
 -- 8. attendance
 -- ------------------------------------------------------------
