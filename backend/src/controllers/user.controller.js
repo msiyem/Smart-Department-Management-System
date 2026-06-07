@@ -10,15 +10,12 @@ export const createUser = asyncHandler(async (req, res) => {
     email,
     password,
     role,
-    // student fields
     registration_no,
     session,
     semester,
-    // teacher fields
     designation,
   } = req.body;
 
-  // 1. validate required fields
   if (!full_name || !email || !password || !role) {
     throw new ApiError(400, "Basic fields are required.");
   }
@@ -28,7 +25,6 @@ export const createUser = asyncHandler(async (req, res) => {
     throw new ApiError(400, "Only student or teacher can be created.");
   }
 
-  // 2. check duplicate email
   const [[existing]] = await pool.query(
     "SELECT id FROM users WHERE email = ?",
     [email]
@@ -38,51 +34,87 @@ export const createUser = asyncHandler(async (req, res) => {
     throw new ApiError(409, "Email already exists.");
   }
 
-  // 3. hash password
   const hashedPassword = await bcrypt.hash(password, 10);
 
-  // 4. insert into users table
-  const [userResult] = await pool.query(
-    `INSERT INTO users (full_name, email, password, role)
-     VALUES (?, ?, ?, ?)`,
-    [full_name, email, hashedPassword, role]
-  );
+  // ✅ START TRANSACTION
+  const conn = await pool.getConnection();
+  await conn.beginTransaction();
 
-  const userId = userResult.insertId;
+  try {
+    // 1. create user
+    const [userResult] = await conn.query(
+      `INSERT INTO users (full_name, email, password, role)
+       VALUES (?, ?, ?, ?)`,
+      [full_name, email, hashedPassword, role]
+    );
 
-  // 5. role-based insert
-  if (role === "student") {
-    if (!registration_no || !session || !semester) {
-      throw new ApiError(
-        400,
-        "registration_no, session, semester are required for student."
+    const userId = userResult.insertId;
+
+    let studentId = null;
+
+    // 2. create student
+    if (role === "student") {
+      if (!registration_no || !session || !semester) {
+        throw new ApiError(
+          400,
+          "registration_no, session, semester are required for student."
+        );
+      }
+
+      const [studentResult] = await conn.query(
+        `INSERT INTO students (user_id, registration_no, session, semester)
+         VALUES (?, ?, ?, ?)`,
+        [userId, registration_no, session, semester]
+      );
+
+      studentId = studentResult.insertId;
+
+      // 3. get courses for that semester
+      const [courses] = await conn.query(
+        `SELECT id FROM courses WHERE semester = ?`,
+        [semester]
+      );
+
+      // 4. bulk enroll
+      if (courses.length > 0) {
+        const enrollValues = courses.map((c) => [
+          studentId,
+          c.id,
+        ]);
+
+        await conn.query(
+          `INSERT INTO enrollments (student_id, course_id)
+           VALUES ?`,
+          [enrollValues]
+        );
+      }
+    }
+
+    // 5. create teacher
+    if (role === "teacher") {
+      await conn.query(
+        `INSERT INTO teachers (user_id, designation)
+         VALUES (?, ?)`,
+        [userId, designation || "Lecturer"]
       );
     }
 
-    await pool.query(
-      `INSERT INTO students (user_id, registration_no, session, semester)
-       VALUES (?, ?, ?, ?)`,
-      [userId, registration_no, session, semester]
-    );
-  }
+    await conn.commit();
 
-  if (role === "teacher") {
-    await pool.query(
-      `INSERT INTO teachers (user_id, designation)
-       VALUES (?, ?)`,
-      [userId, designation || "Lecturer"]
+    return res.status(201).json(
+      new ApiResponse(201, "User created successfully.", {
+        id: userId,
+        full_name,
+        email,
+        role,
+      })
     );
+  } catch (error) {
+    await conn.rollback();
+    throw error;
+  } finally {
+    conn.release();
   }
-
-  // 6. response
-  return res.status(201).json(
-    new ApiResponse(201, "User created successfully.", {
-      id: userId,
-      full_name,
-      email,
-      role,
-    })
-  );
 });
 
 export const getAllUsers = asyncHandler(async (req, res) => {
