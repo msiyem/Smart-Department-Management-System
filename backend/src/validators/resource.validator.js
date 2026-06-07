@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const courseSchema = z.object({
   course_code:  z.string().min(2).max(20).trim().toUpperCase(),
   course_title: z.string().min(3).max(100).trim(),
-  credit:       z.coerce.number().min(0.5).max(6),
+  credit:       z.coerce.number().min(0.5).max(20),
   semester:     z.coerce.number().int().min(1).max(12),
 });
 
