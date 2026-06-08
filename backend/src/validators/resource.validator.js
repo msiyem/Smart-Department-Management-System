@@ -31,11 +31,11 @@ export const attendanceSchema = z.object({
 });
 
 export const assignmentSchema = z.object({
-  course_id:   z.coerce.number().int().positive(),
-  title:       z.string().min(3).max(255).trim(),
-  description: z.string().max(2000).optional(),
-  due_date:    z.string().datetime({ offset: true }),
-  max_marks:   z.coerce.number().min(1).max(1000).default(100),
+  course_id: z.coerce.number().int().positive(),
+  title: z.string().trim().min(3).max(255),
+  description: z.string().trim().max(2000).optional(),
+  due_date: z.string().date(),
+  max_marks: z.coerce.number().int().min(1).max(1000).default(100),
 });
 
 export const gradeSubmissionSchema = z.object({

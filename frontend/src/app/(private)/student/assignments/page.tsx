@@ -1,7 +1,9 @@
-import React from 'react'
+import { StudentAssignmentsList } from "@/components/assignments/student-assignments-list";
 
-export default function page() {
+export default function StudentAssignmentsPage() {
   return (
-    <div>this is the student assignments page</div>
-  )
+    <div className="space-y-6 p-6">
+      <StudentAssignmentsList />
+    </div>
+  );
 }
