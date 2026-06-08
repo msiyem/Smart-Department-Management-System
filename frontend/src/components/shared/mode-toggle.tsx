@@ -13,10 +13,10 @@ export function ModeToggle() {
       variant="outline"
       size="icon"
       onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-      className="ring-emerald-500 dark:ring-emerald-300 active:ring h-9 w-9 rounded-lg"
+      className="relative h-9 w-9 rounded-lg border-border bg-background/80 text-foreground shadow-sm hover:bg-muted active:ring"
     >
-      <Moon className="h-10 w-10 scale-100 transition-all dark:-rotate-90 dark:scale-0 fill-emerald-400 text-emerald-400" />
-      <Sun className="absolute h-10 w-10 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100 text-amber-100" />
+      <Moon className="size-4 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+      <Sun className="absolute size-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
       <span className="sr-only">Toggle theme</span>
     </Button>
   );
