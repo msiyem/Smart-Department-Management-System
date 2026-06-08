@@ -59,7 +59,7 @@ const NAV: Record<Role, NavItem[]> = {
     { href: "/student/courses", label: "Courses", icon: BookMarked },
     { href: "/student/attendance", label: "Attendance", icon: CheckSquare },
     { href: "/student/assignments", label: "Assignments", icon: ClipboardList },
-    { href: "/student/results", label: "Results", icon: GraduationCap },
+    // { href: "/student/results", label: "Results", icon: GraduationCap },
     { href: "/student/notices", label: "Notices", icon: Bell },
     { href: "/student/routine", label: "Routine", icon: Calendar },
   ],

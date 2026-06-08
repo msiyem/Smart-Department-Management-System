@@ -24,7 +24,7 @@ const quickLinks = [
   { href: "/student/courses", label: "Courses", icon: BookOpen },
   { href: "/student/attendance", label: "Attendance", icon: BarChart3 },
   { href: "/student/assignments", label: "Assignments", icon: ClipboardList },
-  { href: "/student/results", label: "Results", icon: GraduationCap },
+  // { href: "/student/results", label: "Results", icon: GraduationCap },
   { href: "/student/notices", label: "Notices", icon: Bell },
   { href: "/student/routine", label: "Routine", icon: CalendarDays },
 ];
