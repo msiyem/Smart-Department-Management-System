@@ -3,6 +3,7 @@ import cloudinary from '../config/cloudinary.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { ApiError, ApiResponse } from '../utils/apiHelpers.js';
 import bcrypt from 'bcrypt';
+import { uploadToCloudinary } from '../utils/cloudinaryUpload.js';
 
 export const createUser = asyncHandler(async (req, res) => {
   const {
@@ -156,8 +157,15 @@ export const updateProfileImage = asyncHandler(async (req, res) => {
     if (publicId) await cloudinary.uploader.destroy(publicId).catch(() => { });
   }
 
-  await pool.query('UPDATE users SET profile_image = ? WHERE id = ?', [req.file.path, req.user.id]);
-  return res.json(new ApiResponse(200, 'Profile image updated.', { profile_image: req.file.path }));
+  const result = await uploadToCloudinary(
+    req.file.buffer,
+    'dept-mgmt/profiles',
+    'image',
+    req.file.originalname,
+  );
+
+  await pool.query('UPDATE users SET profile_image = ? WHERE id = ?', [result.secure_url, req.user.id]);
+  return res.json(new ApiResponse(200, 'Profile image updated.', { profile_image: result.secure_url }));
 });
 
 export const updateProfile = asyncHandler(async (req, res) => {
