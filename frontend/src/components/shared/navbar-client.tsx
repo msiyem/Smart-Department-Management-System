@@ -56,16 +56,6 @@ export default function NavbarClient({
 
   const isLoggedIn = !!user;
 
-  // const getUserInitials = () => {
-  //   if (!user?.name) return "U";
-
-  //   return user.name
-  //     .split(" ")
-  //     .map((n) => n[0])
-  //     .join("")
-  //     .toUpperCase()
-  //     .slice(0, 2);
-  // };
 
   return (
     <div className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-emerald-50/90 dark:bg-emerald-800/70 backdrop-blur-md px-4">

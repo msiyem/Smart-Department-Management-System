@@ -32,11 +32,9 @@ import { login } from "@/action/auth.action";
 export default function LoginModal({
   open,
   onOpenChange,
-  switchToRegister,
 }: {
   open?: boolean;
   onOpenChange?: (open: boolean) => void;
-  switchToRegister?: () => void;
 }) {
   const {
     register,
@@ -190,20 +188,6 @@ export default function LoginModal({
               </Button>
             </form>
           </CardContent>
-
-          {/* Footer */}
-          <CardFooter className="justify-center text-sm text-muted-foreground">
-            Don&apos;t have an account?
-            <span
-              onClick={() => {
-                onOpenChange?.(false);
-                switchToRegister?.();
-              }}
-              className="ml-1 text-link  hover:underline cursor-pointer"
-            >
-              Register
-            </span>
-          </CardFooter>
         </Card>
       </DialogContent>
     </Dialog>
