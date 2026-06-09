@@ -84,43 +84,11 @@ export default function LoginModal({
 
           {/* Google Button */}
           <CardContent className="space-y-4">
-            <Button
-              type="button"
-              variant="outline"
-              className="w-full flex items-center justify-center gap-3"
-              onClick={async () => {
-                try {
-                  setGoogleSubmitting(true);
-
-                  // TODO: integrate real Google OAuth
-                  await new Promise((res) => setTimeout(res, 1500));
-
-                  toast.info("Google login coming soon ", {
-                    richColors: true,
-                  });
-                } finally {
-                  setGoogleSubmitting(false);
-                }
-              }}
-            >
-              {googleSubmitting ? (
-                <>
-                  <LoaderCircle className="animate-spin w-4 h-4" />
-                  <Image src={googleLogo} alt="Google" width={18} height={18} />
-                  Continuing.....
-                </>
-              ) : (
-                <>
-                  <Image src={googleLogo} alt="Google" width={18} height={18} />
-                  Continue with Google
-                </>
-              )}
-            </Button>
-
+            
             {/* Divider */}
             <div className="flex items-center gap-3 text-sm text-muted-foreground">
               <div className="flex-1 h-px bg-border" />
-              or
+              
               <div className="flex-1 h-px bg-border" />
             </div>
 

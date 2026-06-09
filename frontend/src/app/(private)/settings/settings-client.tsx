@@ -192,7 +192,7 @@ export default function SettingsClient({ profile }: { profile: User }) {
         </section>
       </div>
 
-      <section className="rounded-xl border bg-background p-5 shadow-sm">
+      {/* <section className="rounded-xl border bg-background p-5 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
             <Settings className="size-5" />
@@ -236,7 +236,7 @@ export default function SettingsClient({ profile }: { profile: User }) {
             />
           </label>
         </div>
-      </section>
+      </section> */}
     </div>
   );
 }
