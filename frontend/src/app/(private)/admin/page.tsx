@@ -57,7 +57,7 @@ export default function Page() {
   if (!data) return null;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 px-16 py-10">
       {/* Header */}
       <div>
         <h1 className="text-2xl font-bold">Admin Dashboard 👋</h1>

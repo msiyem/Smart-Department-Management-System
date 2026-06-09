@@ -134,7 +134,7 @@ export default function Page() {
   const isFormValid = form.course_code && form.course_title && form.credit && form.semester;
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 px-4 py-8 sm:px-6 lg:px-8 font-sans transition-colors duration-200">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-950 px-16 py-10 sm:px-6 lg:px-16 font-sans transition-colors duration-200 ">
 
       {/* ── Page Header ── */}
       <div className="flex flex-wrap items-start justify-between gap-4 mb-8">
@@ -171,9 +171,9 @@ export default function Page() {
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
           { label: "Total Courses",  value: courses.length, sub: "across all semesters" },
-          { label: "Total Credits",  value: totalCredits,   sub: "credit hours offered" },
+          // { label: "Total Credits",  value: totalCredits,   sub: "credit hours offered" },
           { label: "Semesters",      value: activeSems,     sub: "currently active" },
-          { label: "Avg Credits",    value: avgCredits,     sub: "per course" },
+          // { label: "Avg Credits",    value: avgCredits,     sub: "per course" },
         ].map((s) => (
           <div
             key={s.label}
