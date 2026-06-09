@@ -2,6 +2,7 @@
 
 import { refreshSession } from "@/action/session.action";
 import { serverRequest } from "@/action/server-request.action";
+import { deleteCookie } from "@/lib/cookies";
 import type { ApiResponse, User } from "@/lib/types";
 
 type ActionResult<T> = {
@@ -100,6 +101,68 @@ export async function updateCurrentProfileImage(formData: FormData) {
     return {
       success: false,
       message: getErrorMessage(error, "Failed to update profile image"),
+    };
+  }
+}
+
+export async function changeCurrentPassword(formData: FormData) {
+  try {
+    const currentPassword = String(formData.get("current_password") || "");
+    const newPassword = String(formData.get("new_password") || "");
+    const confirmPassword = String(formData.get("confirm_password") || "");
+
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      return {
+        success: false,
+        message: "All password fields are required",
+      };
+    }
+
+    if (newPassword !== confirmPassword) {
+      return {
+        success: false,
+        message: "New password and confirmation do not match",
+      };
+    }
+
+    if (newPassword.length < 8) {
+      return {
+        success: false,
+        message: "Password must be at least 8 characters",
+      };
+    }
+
+    if (!/[A-Z]/.test(newPassword) || !/[0-9]/.test(newPassword)) {
+      return {
+        success: false,
+        message: "Password must contain an uppercase letter and a number",
+      };
+    }
+
+    const response = await serverRequest<ApiResponse<null>>(
+      "auth/change-password",
+      {
+        method: "PATCH",
+        auth: true,
+        body: JSON.stringify({
+          current_password: currentPassword,
+          new_password: newPassword,
+        }),
+      },
+    );
+
+    await deleteCookie("accessToken");
+    await deleteCookie("refreshToken");
+    await deleteCookie("sessionId");
+
+    return {
+      success: true,
+      message: response.message,
+    };
+  } catch (error) {
+    return {
+      success: false,
+      message: getErrorMessage(error, "Failed to change password"),
     };
   }
 }

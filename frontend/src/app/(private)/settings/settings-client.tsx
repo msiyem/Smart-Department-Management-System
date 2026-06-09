@@ -2,10 +2,11 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Loader2, Save, Settings, UserRound } from "lucide-react";
+import { Camera, Loader2, LockKeyhole, Save, UserRound } from "lucide-react";
 import { toast } from "sonner";
 
 import {
+  changeCurrentPassword,
   updateCurrentProfile,
   updateCurrentProfileImage,
 } from "@/action/profile.action";
@@ -31,8 +32,9 @@ export default function SettingsClient({ profile }: { profile: User }) {
   const [fullName, setFullName] = useState(profile.full_name);
   const [profileImage, setProfileImage] = useState(profile.profile_image);
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [compactMode, setCompactMode] = useState(false);
-  const [emailUpdates, setEmailUpdates] = useState(true);
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [isPending, startTransition] = useTransition();
 
   const previewUrl = useMemo(() => {
@@ -83,13 +85,46 @@ export default function SettingsClient({ profile }: { profile: User }) {
     });
   };
 
+  const handlePasswordSave = () => {
+    if (!currentPassword || !newPassword || !confirmPassword) {
+      toast.error("All password fields are required");
+      return;
+    }
+
+    if (newPassword !== confirmPassword) {
+      toast.error("New password and confirmation do not match");
+      return;
+    }
+
+    startTransition(async () => {
+      const formData = new FormData();
+      formData.append("current_password", currentPassword);
+      formData.append("new_password", newPassword);
+      formData.append("confirm_password", confirmPassword);
+
+      const response = await changeCurrentPassword(formData);
+
+      if (!response.success) {
+        toast.error(response.message || "Failed to change password");
+        return;
+      }
+
+      setCurrentPassword("");
+      setNewPassword("");
+      setConfirmPassword("");
+      toast.success(response.message || "Password changed");
+      router.push("/");
+      router.refresh();
+    });
+  };
+
   return (
     <div className="space-y-6 p-6">
       <div>
         <p className="text-sm font-medium text-primary">Account</p>
         <h1 className="mt-1 text-2xl font-bold tracking-tight">Settings</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Manage your mini-profile and account preferences.
+       
         </p>
       </div>
 
@@ -102,7 +137,7 @@ export default function SettingsClient({ profile }: { profile: User }) {
             <div>
               <h2 className="font-semibold">Mini Profile Photo</h2>
               <p className="text-sm text-muted-foreground">
-                This appears in the navbar.
+                
               </p>
             </div>
           </div>
@@ -155,7 +190,6 @@ export default function SettingsClient({ profile }: { profile: User }) {
             <div>
               <h2 className="font-semibold">Profile Information</h2>
               <p className="text-sm text-muted-foreground">
-                Keep your displayed name current.
               </p>
             </div>
           </div>
@@ -192,51 +226,72 @@ export default function SettingsClient({ profile }: { profile: User }) {
         </section>
       </div>
 
-      {/* <section className="rounded-xl border bg-background p-5 shadow-sm">
+      <section className="rounded-xl border bg-background p-5 shadow-sm">
         <div className="flex items-center gap-3">
           <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
-            <Settings className="size-5" />
+            <LockKeyhole className="size-5" />
           </div>
           <div>
-            <h2 className="font-semibold">Preferences</h2>
+            <h2 className="font-semibold">Change Password</h2>
             <p className="text-sm text-muted-foreground">
-              Stored for this browser session.
+              You will need to log in again after updating your password.
             </p>
           </div>
         </div>
 
-        <div className="mt-5 grid gap-3 sm:grid-cols-2">
-          <label className="flex items-center justify-between gap-4 rounded-lg border p-4">
-            <span>
-              <span className="block text-sm font-medium">Compact lists</span>
-              <span className="text-xs text-muted-foreground">
-                Use denser spacing where supported.
-              </span>
-            </span>
-            <input
-              type="checkbox"
-              checked={compactMode}
-              onChange={(event) => setCompactMode(event.target.checked)}
-              className="size-4"
+        <div className="mt-5 grid gap-4 lg:grid-cols-3">
+          <div className="space-y-2">
+            <Label htmlFor="current_password">Current password</Label>
+            <Input
+              id="current_password"
+              type="password"
+              value={currentPassword}
+              autoComplete="current-password"
+              onChange={(event) => setCurrentPassword(event.target.value)}
             />
-          </label>
-
-          <label className="flex items-center justify-between gap-4 rounded-lg border p-4">
-            <span>
-              <span className="block text-sm font-medium">Email updates</span>
-              <span className="text-xs text-muted-foreground">
-                Keep academic reminders enabled.
-              </span>
-            </span>
-            <input
-              type="checkbox"
-              checked={emailUpdates}
-              onChange={(event) => setEmailUpdates(event.target.checked)}
-              className="size-4"
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="new_password">New password</Label>
+            <Input
+              id="new_password"
+              type="password"
+              value={newPassword}
+              autoComplete="new-password"
+              onChange={(event) => setNewPassword(event.target.value)}
             />
-          </label>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="confirm_password">Confirm password</Label>
+            <Input
+              id="confirm_password"
+              type="password"
+              value={confirmPassword}
+              autoComplete="new-password"
+              onChange={(event) => setConfirmPassword(event.target.value)}
+            />
+          </div>
         </div>
-      </section> */}
+
+        <div className="mt-5 flex justify-end">
+          <Button
+            type="button"
+            onClick={handlePasswordSave}
+            disabled={
+              isPending ||
+              !currentPassword ||
+              !newPassword ||
+              !confirmPassword
+            }
+          >
+            {isPending ? (
+              <Loader2 className="size-4 animate-spin" />
+            ) : (
+              <LockKeyhole className="size-4" />
+            )}
+            Change Password
+          </Button>
+        </div>
+      </section>
     </div>
   );
 }
