@@ -26,7 +26,7 @@ export const login = async (payload: LoginPayload): Promise<LoginResponse> => {
 
     const { accessToken, refreshToken, sessionId } = result.data;
 
-    await setCookie("accessToken", accessToken, 60 * 15);
+    await setCookie("accessToken", accessToken, 60 * 60); // 1 hour
 
     await setCookie("refreshToken", refreshToken, 60 * 60 * 24 * 7);
 

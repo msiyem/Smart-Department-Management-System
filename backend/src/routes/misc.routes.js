@@ -18,7 +18,7 @@ export const noticeRouter = Router();
 noticeRouter.use(protect);
 noticeRouter.get('/',     getNotices);
 noticeRouter.post('/',    authorize('admin', 'teacher'), uploadNotice.single('attachment'), validate(noticeSchema), createNotice);
-noticeRouter.delete('/:id', authorize('admin'), deleteNotice);
+noticeRouter.delete('/:id', authorize('admin', 'teacher'), deleteNotice);
 
 export const routineRouter = Router();
 routineRouter.use(protect);

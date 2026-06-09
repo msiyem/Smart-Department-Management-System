@@ -8,6 +8,7 @@ import {
   mySubmissions,
   getTeacherAssignments,
   getStudentAssignments,
+  deleteAssignment,
 } from "../controllers/assignment.controller.js";
 import { protect, authorize } from "../middlewares/auth.js";
 import validate from "../middlewares/validate.js";
@@ -24,6 +25,12 @@ router.get("/", getAssignments);
 router.get("/my", authorize("student"), mySubmissions);
 router.get("/student/my", authorize("student"), getStudentAssignments);
 router.get("/teacher/created", authorize("teacher"), getTeacherAssignments);
+
+router.delete(
+  "/:assignment_id",
+  authorize("teacher", "admin"),
+  deleteAssignment,
+);
 
 router.post(
   "/",

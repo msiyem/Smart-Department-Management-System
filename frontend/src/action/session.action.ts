@@ -42,7 +42,7 @@ export const refreshSession = async (): Promise<boolean> => {
     await setCookie(
       "accessToken",
       accessToken,
-      60 * 15,
+      60 * 60, // 1 hour
     );
 
     await setCookie(

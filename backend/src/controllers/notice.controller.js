@@ -86,10 +86,19 @@ export const getNotices = asyncHandler(async (req, res) => {
 });
 
 export const deleteNotice = asyncHandler(async (req, res) => {
-  const [[notice]] = await pool.query("SELECT id FROM notices WHERE id = ?", [
-    req.params.id,
-  ]);
+  const [[notice]] = await pool.query(
+    "SELECT id, created_by FROM notices WHERE id = ?",
+    [req.params.id],
+  );
   if (!notice) throw new ApiError(404, "Notice not found.");
+
+  if (
+    req.user.role === "teacher" &&
+    Number(notice.created_by) !== Number(req.user.id)
+  ) {
+    throw new ApiError(403, "You can only delete notices you created.");
+  }
+
   await pool.query("DELETE FROM notices WHERE id = ?", [req.params.id]);
   return res.json(new ApiResponse(200, "Notice deleted."));
 });

@@ -259,6 +259,7 @@ export function AssignmentSubmissionsClient({ assignmentId }: Props) {
                   <TableCell className="text-right">
                     <Button
                       size="sm"
+                      className="hover:bg-primary/90"
                       onClick={() => saveGrade(submission)}
                       disabled={savingId === submission.id}
                     >

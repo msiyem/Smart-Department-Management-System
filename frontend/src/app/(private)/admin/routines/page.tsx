@@ -8,10 +8,17 @@ import {
 } from "@/lib/api/routines.api";
 import { getCourses } from "@/lib/api/courses.api";
 import { getUsers } from "@/lib/api/users.api";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
-/* ─────────────────────────────────────────────────────────
-   Constants
-───────────────────────────────────────────────────────── */
 const DAYS = [
   "Saturday", "Sunday", "Monday", "Tuesday",
   "Wednesday", "Thursday", "Friday",
@@ -325,23 +332,8 @@ export default function Page() {
   const [loading,    setLoading]    = useState(false);
   const [filterDay,  setFilterDay]  = useState("All");
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
 
-  /* Toast */
-  const [toasts, setToasts] = useState<Toast[]>([]);
-  const removeToast = useCallback((id: number) => {
-    setToasts((prev) => prev.filter((t) => t.id !== id));
-  }, []);
-  const addToast = useCallback((
-    type: ToastType,
-    title: string,
-    message?: string,
-    extra?: Pick<Toast, "onConfirm" | "onCancel">,
-  ) => {
-    const id = Date.now();
-    setToasts((prev) => [...prev, { id, type, title, message, ...extra }]);
-  }, []);
-
-  /* Form */
   const [form, setForm] = useState({
     course_id: "",
     teacher_id: "",
@@ -391,23 +383,20 @@ export default function Page() {
     }
   };
 
-  /* ── Delete (confirm toast) ── */
-  const requestDelete = (id: number) => {
-    addToast("confirm", "Delete this slot?", "This action cannot be undone.", {
-      onConfirm: async () => {
-        try {
-          setDeletingId(id);
-          await deleteRoutine(id);
-          await fetchData();
-          addToast("warning", "Routine slot deleted", "The schedule entry has been removed.");
-        } catch (err: any) {
-          addToast("error", "Failed to delete slot", err?.message);
-        } finally {
-          setDeletingId(null);
-        }
-      },
-      onCancel: () => {},
-    });
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+
+    try {
+      const id = deleteTarget.id;
+      setDeletingId(id);
+      await deleteRoutine(id);
+      setDeleteTarget(null);
+      fetchData();
+    } catch (err: any) {
+      alert(err.message);
+    } finally {
+      setDeletingId(null);
+    }
   };
 
   const filteredRoutines = filterDay === "All"
@@ -429,18 +418,41 @@ export default function Page() {
   /* ─── Render ───────────────────────────────────────── */
   return (
     <>
-      {/* Toast portal */}
-      <div className="fixed top-5 right-5 z-50 flex flex-col gap-2.5 pointer-events-none">
-        {toasts.map((t) => (
-          <div key={t.id} className="pointer-events-auto">
-            <ToastItem toast={t} onClose={() => removeToast(t.id)} />
-          </div>
-        ))}
-      </div>
+      <Dialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open && deletingId === null) {
+            setDeleteTarget(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete routine slot?</DialogTitle>
+            <DialogDescription>
+              This will remove the {deleteTarget?.day} routine slot for{" "}
+              {deleteTarget?.course_code || "this course"}.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={deletingId !== null}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deletingId !== null}
+            >
+              {deletingId !== null ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-      {/* Page */}
-      <div className="min-h-screen bg-gray-100 dark:bg-gray-950 px-4 py-10 sm:px-6 lg:px-10 transition-colors duration-200">
-        <div className="mx-auto max-w-6xl space-y-8">
+      <div className="min-h-screen bg-[#e9eef2] px-4 py-10 sm:px-6 lg:px-10">
+      <div className="mx-auto max-w-6xl space-y-8">
 
           {/* ── Header ── */}
           <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
@@ -638,76 +650,93 @@ export default function Page() {
               </div>
             </div>
 
-            {/* Desktop table */}
-            <div className="hidden overflow-x-auto md:block">
-              <table className="w-full text-sm">
-                <thead>
-                  <tr className="border-b border-gray-100 dark:border-gray-800 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-400 dark:text-gray-500">
-                    <th className="px-6 py-4">Course</th>
-                    <th className="px-6 py-4">Teacher</th>
-                    <th className="px-6 py-4">Day</th>
-                    <th className="px-6 py-4">Time</th>
-                    <th className="px-6 py-4">Room</th>
-                    <th className="px-6 py-4 text-right">Action</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-50 dark:divide-gray-800/60">
-                  {filteredRoutines.map((routine: any) => (
-                    <tr key={routine.id} className="transition hover:bg-indigo-50/30 dark:hover:bg-indigo-900/10">
-                      <td className="px-6 py-4">
-                        <span className="font-mono text-xs font-semibold px-2.5 py-1 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
-                          {routine.course_code}
-                        </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2.5">
-                          <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-indigo-100 dark:bg-indigo-900/50 text-xs font-bold text-indigo-600 dark:text-indigo-300">
-                            {routine.teacher_name?.split(" ").map((n: string) => n[0]).join("").slice(0, 2).toUpperCase() || "—"}
-                          </div>
-                          <span className="text-gray-700 dark:text-gray-300">{routine.teacher_name}</span>
+          {/* Desktop Table */}
+          <div className="hidden overflow-x-auto md:block">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-gray-100 bg-gray-50/60 text-left text-xs font-semibold uppercase tracking-wider text-gray-400">
+                  <th className="px-6 py-4">Course</th>
+                  <th className="px-6 py-4">Teacher</th>
+                  <th className="px-6 py-4">Day</th>
+                  <th className="px-6 py-4">Time</th>
+                  <th className="px-6 py-4">Room</th>
+                  <th className="px-6 py-4 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {filteredRoutines.map((routine: any) => (
+                  <tr
+                    key={routine.id}
+                    className="group transition hover:bg-blue-50/30"
+                  >
+                    <td className="px-6 py-4">
+                      <span className="font-semibold text-gray-800">
+                        {routine.course_code}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2.5">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-[#2a7fba]/10 text-xs font-bold text-[#2a7fba]">
+                          {routine.teacher_name
+                            ?.split(" ")
+                            .map((n: string) => n[0])
+                            .join("")
+                            .slice(0, 2)
+                            .toUpperCase() || "—"}
                         </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <span className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${DAY_COLORS[routine.day] ?? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"}`}>
-                          {routine.day}
+                        <span className="text-gray-700">
+                          {routine.teacher_name}
                         </span>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-1.5 text-gray-700 dark:text-gray-300">
-                          <svg className="h-3.5 w-3.5 text-gray-400 dark:text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                            <circle cx="12" cy="12" r="10" /><path strokeLinecap="round" d="M12 6v6l4 2" />
-                          </svg>
-                          {routine.start_time} – {routine.end_time}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        {routine.room_no ? (
-                          <span className="rounded-lg bg-gray-100 dark:bg-gray-800 px-2.5 py-1 text-xs font-medium text-gray-600 dark:text-gray-300">
-                            {routine.room_no}
-                          </span>
-                        ) : (
-                          <span className="text-gray-300 dark:text-gray-600">—</span>
-                        )}
-                      </td>
-                      <td className="px-6 py-4 text-right">
-                        <button
-                          onClick={() => requestDelete(routine.id)}
-                          disabled={deletingId === routine.id}
-                          className="inline-flex items-center gap-1.5 rounded-lg border border-red-100 dark:border-red-900/50 px-3 py-1.5 text-xs font-semibold text-red-500 dark:text-red-400 transition hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-300 dark:hover:border-red-700 active:scale-95 disabled:opacity-40 cursor-pointer bg-transparent"
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span
+                        className={`rounded-lg px-2.5 py-1 text-xs font-semibold ${
+                          DAY_COLORS[routine.day] ?? "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {routine.day}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-1.5 text-gray-700">
+                        <svg
+                          xmlns="http://www.w3.org/2000/svg"
+                          className="h-3.5 w-3.5 text-gray-400"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2}
                         >
-                          {deletingId === routine.id ? (
-                            <>
-                              <svg className="h-3.5 w-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z" />
-                              </svg>
-                              Deleting…
-                            </>
-                          ) : "Delete"}
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
+                          <circle cx="12" cy="12" r="10" />
+                          <path
+                            strokeLinecap="round"
+                            d="M12 6v6l4 2"
+                          />
+                        </svg>
+                        {routine.start_time} – {routine.end_time}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      {routine.room_no ? (
+                        <span className="rounded-lg bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+                          {routine.room_no}
+                        </span>
+                      ) : (
+                        <span className="text-gray-400">—</span>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <button
+                        onClick={() => setDeleteTarget(routine)}
+                        disabled={deletingId === routine.id}
+                        className="rounded-lg px-3 py-1.5 text-xs font-semibold text-red-500 transition hover:bg-red-50 active:scale-95 disabled:opacity-40"
+                      >
+                        {deletingId === routine.id ? "Deleting…" : "Delete"}
+                      </button>
+                    </td>
+                  </tr>
+                ))}
 
                   {filteredRoutines.length === 0 && (
                     <tr>
@@ -728,40 +757,48 @@ export default function Page() {
               </table>
             </div>
 
-            {/* Mobile cards */}
-            <div className="divide-y divide-gray-100 dark:divide-gray-800 md:hidden">
-              {filteredRoutines.map((routine: any) => (
-                <div key={routine.id} className="px-5 py-4 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-1.5">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300">
-                          {routine.course_code}
-                        </span>
-                        <span className={`rounded-lg px-2 py-0.5 text-xs font-semibold ${DAY_COLORS[routine.day] ?? "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"}`}>
-                          {routine.day}
-                        </span>
-                      </div>
-                      <p className="text-sm text-gray-600 dark:text-gray-300">{routine.teacher_name}</p>
-                      <div className="flex items-center gap-3 text-xs text-gray-500 dark:text-gray-400">
-                        <span>{routine.start_time} – {routine.end_time}</span>
-                        {routine.room_no && (
-                          <span className="rounded bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 font-medium text-gray-600 dark:text-gray-300">
-                            {routine.room_no}
-                          </span>
-                        )}
-                      </div>
+          {/* Mobile Cards */}
+          <div className="divide-y divide-gray-100 md:hidden">
+            {filteredRoutines.map((routine: any) => (
+              <div key={routine.id} className="px-5 py-4">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="space-y-1.5">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold text-gray-900">
+                        {routine.course_code}
+                      </span>
+                      <span
+                        className={`rounded-lg px-2 py-0.5 text-xs font-semibold ${
+                          DAY_COLORS[routine.day] ?? "bg-gray-100 text-gray-600"
+                        }`}
+                      >
+                        {routine.day}
+                      </span>
                     </div>
-                    <button
-                      onClick={() => requestDelete(routine.id)}
-                      disabled={deletingId === routine.id}
-                      className="flex-shrink-0 rounded-lg border border-red-100 dark:border-red-900/50 px-3 py-1.5 text-xs font-semibold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 disabled:opacity-40 transition cursor-pointer bg-transparent"
-                    >
-                      {deletingId === routine.id ? "…" : "Delete"}
-                    </button>
+                    <p className="text-sm text-gray-500">
+                      {routine.teacher_name}
+                    </p>
+                    <div className="flex items-center gap-3 text-xs text-gray-500">
+                      <span>
+                        {routine.start_time} – {routine.end_time}
+                      </span>
+                      {routine.room_no && (
+                        <span className="rounded bg-gray-100 px-1.5 py-0.5 font-medium text-gray-600">
+                          {routine.room_no}
+                        </span>
+                      )}
+                    </div>
                   </div>
+                  <button
+                    onClick={() => setDeleteTarget(routine)}
+                    disabled={deletingId === routine.id}
+                    className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-red-500 transition hover:bg-red-50 disabled:opacity-40"
+                  >
+                    {deletingId === routine.id ? "…" : "Delete"}
+                  </button>
                 </div>
-              ))}
+              </div>
+            ))}
 
               {filteredRoutines.length === 0 && (
                 <div className="flex flex-col items-center gap-2 py-16 text-center">
@@ -778,17 +815,7 @@ export default function Page() {
           </div>
         </div>
       </div>
-
-      <style>{`
-        @keyframes slideInRight {
-          from { opacity: 0; transform: translateX(24px); }
-          to   { opacity: 1; transform: translateX(0); }
-        }
-        @keyframes dropIn {
-          from { opacity: 0; transform: translateY(-6px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
-      `}</style>
+      </div>
     </>
   );
 }

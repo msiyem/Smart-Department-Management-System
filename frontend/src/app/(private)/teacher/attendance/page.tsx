@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { format } from "date-fns";
-import { AlertCircle, CheckCircle, Loader2 } from "lucide-react";
+import { AlertCircle, CheckCircle, ListCheck, ListChecks, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -394,7 +394,7 @@ export default function TeacherAttendancePage() {
                     onClick={handleSubmit}
                     disabled={isSubmitting || stats.pending > 0}
                     size="lg"
-                    className="bg-blue-600 hover:bg-blue-700"
+                    className=" hover:bg-emerald-600"
                   >
                     {isSubmitting ? (
                       <>
@@ -435,25 +435,13 @@ export default function TeacherAttendancePage() {
 
       {/* Instructions */}
       {!selectedCourse && (
-        <Card className="bg-blue-50 border-blue-200">
-          <CardHeader>
-            <CardTitle className="text-blue-900">How to Use</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-blue-900 space-y-2">
-            <p>
-              1. Select a course from the dropdown to view enrolled students.
-            </p>
-            <p>2. Select the attendance date using the date picker.</p>
-            <p>
-              3. Click on the &quot;Mark&quot; button for each student to mark
-              them as Present or Absent.
-            </p>
-            <p>
-              4. Once all students are marked, click &quot;Submit
-              Attendance&quot; to save the records.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="rounded-xl border border-dashed bg-background p-12 text-center">
+          <ListChecks className="mx-auto mb-3 size-10 text-muted-foreground" />
+          <p className="font-medium">No attendance slots found</p>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Please select a course and date to manage attendance
+          </p>
+        </div>
       )}
     </div>
   );
