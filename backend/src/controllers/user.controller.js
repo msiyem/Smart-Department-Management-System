@@ -122,8 +122,11 @@ export const getAllUsers = asyncHandler(async (req, res) => {
 
   const [rows] = await pool.query(
     `SELECT id, full_name, email, role, profile_image, is_active, created_at
-     FROM users ${where} ORDER BY created_at DESC LIMIT ? OFFSET ?`,
-    [...params, Number(limit), offset],
+   FROM users
+   WHERE role != 'admin'
+   ORDER BY created_at DESC
+   LIMIT ? OFFSET ?`,
+    [Number(limit), offset]
   );
   const [[{ total }]] = await pool.query(`SELECT COUNT(*) total FROM users ${where}`, params);
 
