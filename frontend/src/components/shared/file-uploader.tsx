@@ -74,7 +74,7 @@ export function FileUploader({
             </p>
 
             <p className="text-xs text-muted-foreground">
-              Drag and drop or click to select
+              Click to select
             </p>
           </div>
 

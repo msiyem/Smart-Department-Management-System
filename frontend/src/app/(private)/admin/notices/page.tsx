@@ -6,11 +6,22 @@ import {
   deleteNotice,
   getNotices,
 } from "@/lib/api/notices.api";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 export default function Page() {
   const [notices, setNotices] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
 
   const [form, setForm] = useState({
     title: "",
@@ -65,12 +76,14 @@ export default function Page() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Delete this notice?")) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
 
     try {
+      const id = deleteTarget.id;
       setDeletingId(id);
       await deleteNotice(id);
+      setDeleteTarget(null);
       fetchData();
     } catch (err: any) {
       alert(err.message);
@@ -84,7 +97,41 @@ export default function Page() {
     "w-full rounded-xl border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 px-4 py-3 text-sm text-gray-800 dark:text-gray-100 placeholder:text-gray-400 dark:placeholder:text-gray-500 transition focus:border-[#2a7fba] focus:outline-none focus:bg-white dark:focus:bg-gray-800";
 
   return (
-    <div className="min-h-screen bg-[#e9eef2] dark:bg-gray-950 px-4 py-10 transition-colors">
+    <>
+      <Dialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open && deletingId === null) {
+            setDeleteTarget(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete notice?</DialogTitle>
+            <DialogDescription>
+              This will permanently delete &quot;{deleteTarget?.title}&quot;.
+              Students and teachers will no longer see it.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={deletingId !== null}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deletingId !== null}
+            >
+              {deletingId !== null ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <div className="min-h-screen bg-[#e9eef2] dark:bg-gray-950 px-4 py-10 transition-colors">
       <div className="mx-auto max-w-6xl space-y-8">
 
         {/* HEADER */}
@@ -238,7 +285,7 @@ export default function Page() {
 
                   {/* DELETE BUTTON */}
                   <button
-                    onClick={() => handleDelete(notice.id)}
+                    onClick={() => setDeleteTarget(notice)}
                     disabled={deletingId === notice.id}
                     className="rounded-lg px-3 py-2 text-sm font-semibold text-red-500 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition"
                   >
@@ -252,6 +299,7 @@ export default function Page() {
         </div>
 
       </div>
-    </div>
+      </div>
+    </>
   );
 }

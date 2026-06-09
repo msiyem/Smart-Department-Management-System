@@ -1,3 +1,4 @@
+"use server";
 import { serverRequest } from "@/action/server-request.action";
 import type { User, ApiResponse } from "@/lib/types";
 
@@ -18,3 +19,12 @@ export const getAllUsers = async (): Promise<ApiResponse<User[]>> => {
     };
   }
 };
+
+
+export async function createUserAction(data: CreateUserInput) {
+  return serverRequest("/users", {
+    method: "POST",
+    body: JSON.stringify(data),
+    auth: true,
+  });
+}

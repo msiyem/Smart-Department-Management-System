@@ -190,6 +190,44 @@ export async function getTeacherAssignments(): Promise<GetAssignmentsResponse> {
   }
 }
 
+export async function deleteAssignment(
+  assignmentId: number,
+): Promise<SubmitAssignmentResponse> {
+  try {
+    if (!assignmentId || assignmentId <= 0) {
+      return {
+        success: false,
+        message: "Invalid assignment ID",
+      };
+    }
+
+    const response = await serverRequest<APIResponse<null>>(
+      `/assignments/${assignmentId}`,
+      {
+        method: "DELETE",
+        auth: true,
+      },
+    );
+
+    return {
+      success: true,
+      message: response.message || "Assignment deleted successfully",
+    };
+  } catch (error) {
+    console.error("Delete assignment error:", error);
+
+    const errorMessage =
+      error && typeof error === "object" && "message" in error
+        ? (error.message as string)
+        : "Failed to delete assignment";
+
+    return {
+      success: false,
+      message: errorMessage,
+    };
+  }
+}
+
 /**
  * Fetch all assignments for student (assignments from enrolled courses)
  */

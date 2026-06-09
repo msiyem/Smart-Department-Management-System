@@ -179,7 +179,7 @@ export function CreateAssignmentModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl sm:min-w-2xl max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader>
           <DialogTitle>Create New Assignment</DialogTitle>
           <DialogDescription>
@@ -188,7 +188,7 @@ export function CreateAssignmentModal({
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-          <div className="grid gap-6 md:grid-cols-2">
+          <div className="grid gap-6 sm:grid-cols-2">
             <div className="space-y-5">
               {/* Course Selector */}
               <div className="space-y-2">
@@ -272,7 +272,7 @@ export function CreateAssignmentModal({
               {/* Description */}
               <div className="space-y-2">
                 <label className="text-sm font-medium">Description</label>
-                <Textarea rows={6} {...register("description")} />
+                <Textarea rows={6} {...register("description")} className="sm:h-55" />
               </div>
             </div>
 

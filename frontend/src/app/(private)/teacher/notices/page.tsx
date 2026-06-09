@@ -9,14 +9,30 @@ import {
   Paperclip,
   Search,
   Send,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 
 import { serverRequest } from "@/action/server-request.action";
-import { createNotice, getNotices } from "@/lib/api/notices.api";
+import { createNotice, deleteNotice, getNotices } from "@/lib/api/notices.api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import type { ApiResponse, Course, Notice, NoticePriority } from "@/types";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import type {
+  ApiResponse,
+  Course,
+  Notice,
+  NoticePriority,
+  User,
+} from "@/types";
 
 const priorityStyles: Record<NoticePriority, string> = {
   high: "bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300",
@@ -30,6 +46,9 @@ export default function TeacherNoticesPage() {
   const [notices, setNotices] = useState<Notice[]>([]);
   const [loading, setLoading] = useState(true);
   const [publishing, setPublishing] = useState(false);
+  const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<Notice | null>(null);
+  const [currentUserId, setCurrentUserId] = useState<number | null>(null);
   const [error, setError] = useState("");
   const [query, setQuery] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
@@ -45,16 +64,21 @@ export default function TeacherNoticesPage() {
       if (showLoader) {
         setLoading(true);
       }
-      const [courseResponse, noticeResponse] = await Promise.all([
+      const [courseResponse, noticeResponse, userResponse] = await Promise.all([
         serverRequest<ApiResponse<Course[]>>("/courses/teacher/my", {
           method: "GET",
           auth: true,
         }),
         getNotices(),
+        serverRequest<ApiResponse<User>>("/auth/me", {
+          method: "GET",
+          auth: true,
+        }),
       ]);
 
       setCourses(courseResponse.data || []);
       setNotices(noticeResponse.data?.notices || []);
+      setCurrentUserId(userResponse.data?.id ?? null);
       setError("");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load notices");
@@ -67,16 +91,22 @@ export default function TeacherNoticesPage() {
     const loadInitialData = async () => {
       try {
         setLoading(true);
-        const [courseResponse, noticeResponse] = await Promise.all([
-          serverRequest<ApiResponse<Course[]>>("/courses/teacher/my", {
-            method: "GET",
-            auth: true,
-          }),
-          getNotices(),
-        ]);
+        const [courseResponse, noticeResponse, userResponse] =
+          await Promise.all([
+            serverRequest<ApiResponse<Course[]>>("/courses/teacher/my", {
+              method: "GET",
+              auth: true,
+            }),
+            getNotices(),
+            serverRequest<ApiResponse<User>>("/auth/me", {
+              method: "GET",
+              auth: true,
+            }),
+          ]);
 
         setCourses(courseResponse.data || []);
         setNotices(noticeResponse.data?.notices || []);
+        setCurrentUserId(userResponse.data?.id ?? null);
         setError("");
       } catch (err) {
         setError(err instanceof Error ? err.message : "Failed to load notices");
@@ -137,8 +167,62 @@ export default function TeacherNoticesPage() {
     }
   };
 
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+
+    try {
+      const id = deleteTarget.id;
+      setDeletingId(id);
+      await deleteNotice(id);
+      setNotices((current) => current.filter((notice) => notice.id !== id));
+      setDeleteTarget(null);
+      toast.success("Notice deleted");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Failed to delete");
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
   return (
-    <div className="space-y-6 p-6">
+    <>
+      <Dialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open && deletingId === null) {
+            setDeleteTarget(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete notice?</DialogTitle>
+            <DialogDescription>
+              This will permanently delete &quot;{deleteTarget?.title}&quot;.
+              Students will no longer see this notice.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={deletingId !== null}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deletingId !== null}
+            >
+              {deletingId !== null && (
+                <Loader2 className="size-4 animate-spin" />
+              )}
+              {deletingId !== null ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <div className="space-y-6 p-6">
       <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm font-medium text-primary">Course notices</p>
@@ -164,7 +248,7 @@ export default function TeacherNoticesPage() {
       </div>
 
       <div className="grid gap-6 xl:grid-cols-[420px_1fr]">
-        <section className="rounded-xl border bg-background shadow-sm">
+        <section className="h-fit rounded-xl border bg-background shadow-lg">
           <div className="border-b p-5">
             <div className="flex items-center gap-3">
               <div className="flex size-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
@@ -179,7 +263,7 @@ export default function TeacherNoticesPage() {
             </div>
           </div>
 
-          <form onSubmit={handlePublish} className="space-y-4 p-5">
+          <form onSubmit={handlePublish} className="space-y-3 p-5">
             <div className="space-y-2">
               <label className="text-sm font-medium">Course</label>
               <select
@@ -223,7 +307,7 @@ export default function TeacherNoticesPage() {
                     description: event.target.value,
                   }))
                 }
-                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/50"
+                className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm outline-none transition placeholder:text-muted-foreground focus-visible:ring-3 focus-visible:ring-ring/50 max-h-16 lg:max-h-52"
               />
             </div>
 
@@ -256,11 +340,6 @@ export default function TeacherNoticesPage() {
               </div>
             </div>
 
-            <p className="rounded-lg bg-muted px-3 py-2 text-xs text-muted-foreground">
-              Current backend stores notices globally; selected courses are
-              included in the title for students to recognize the context.
-            </p>
-
             <Button type="submit" disabled={publishing} className="w-full">
               {publishing ? (
                 <Loader2 className="size-4 animate-spin" />
@@ -272,7 +351,8 @@ export default function TeacherNoticesPage() {
           </form>
         </section>
 
-        <section className="rounded-xl border bg-background shadow-sm">
+        <section className="flex max-h-[calc(100vh-120px)] flex-col overflow-hidden rounded-xl border bg-background shadow-lg">
+          
           <div className="flex items-center justify-between border-b p-5">
             <div>
               <h2 className="font-semibold">Published Notices</h2>
@@ -282,13 +362,12 @@ export default function TeacherNoticesPage() {
             </div>
             <Bell className="size-5 text-muted-foreground" />
           </div>
-
           {loading ? (
             <div className="flex justify-center py-14">
               <Loader2 className="size-6 animate-spin text-muted-foreground" />
             </div>
           ) : filteredNotices.length ? (
-            <div className="divide-y">
+            <div className="divide-y overflow-y-auto">
               {filteredNotices.map((notice) => (
                 <article key={notice.id} className="p-5">
                   <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -316,19 +395,35 @@ export default function TeacherNoticesPage() {
                       </p>
                     </div>
 
-                    {notice.attachment && (
-                      <Button asChild variant="outline">
-                        <a
-                          href={notice.attachment}
-                          target="_blank"
-                          rel="noopener noreferrer"
+                    <div className="flex flex-wrap gap-2">
+                      {notice.attachment && (
+                        <Button asChild variant="outline">
+                          <a
+                            href={notice.attachment}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <Paperclip className="size-4" />
+                            Attachment
+                            <ExternalLink className="size-4" />
+                          </a>
+                        </Button>
+                      )}
+                      {Number(notice.created_by) === currentUserId && (
+                        <Button
+                          variant="destructive"
+                          onClick={() => setDeleteTarget(notice)}
+                          disabled={deletingId === notice.id}
                         >
-                          <Paperclip className="size-4" />
-                          Attachment
-                          <ExternalLink className="size-4" />
-                        </a>
-                      </Button>
-                    )}
+                          {deletingId === notice.id ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="size-4" />
+                          )}
+                          {deletingId === notice.id ? "Deleting..." : "Delete"}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </article>
               ))}
@@ -344,6 +439,7 @@ export default function TeacherNoticesPage() {
           )}
         </section>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

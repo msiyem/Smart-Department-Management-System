@@ -272,3 +272,35 @@ export const getStudentAssignments = asyncHandler(async (req, res) => {
 
   return res.json(new ApiResponse(200, "Student assignments fetched.", rows));
 });
+
+export const deleteAssignment = asyncHandler(async (req, res) => {
+  const { assignment_id } = req.params;
+
+  if (req.user.role === "teacher") {
+    const [[teacher]] = await pool.query(
+      "SELECT id FROM teachers WHERE user_id = ?",
+      [req.user.id],
+    );
+    if (!teacher) throw new ApiError(403, "Teacher record not found.");
+
+    const [[assignment]] = await pool.query(
+      "SELECT id FROM assignments WHERE id = ? AND teacher_id = ? AND is_active = 1",
+      [assignment_id, teacher.id],
+    );
+    if (!assignment) {
+      throw new ApiError(403, "You can only delete assignments you created.");
+    }
+  } else {
+    const [[assignment]] = await pool.query(
+      "SELECT id FROM assignments WHERE id = ? AND is_active = 1",
+      [assignment_id],
+    );
+    if (!assignment) throw new ApiError(404, "Assignment not found.");
+  }
+
+  await pool.query("UPDATE assignments SET is_active = 0 WHERE id = ?", [
+    assignment_id,
+  ]);
+
+  return res.json(new ApiResponse(200, "Assignment deleted."));
+});

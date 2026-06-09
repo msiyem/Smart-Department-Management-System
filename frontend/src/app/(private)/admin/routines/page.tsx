@@ -8,6 +8,16 @@ import {
 } from "@/lib/api/routines.api";
 import { getCourses } from "@/lib/api/courses.api";
 import { getUsers } from "@/lib/api/users.api";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 const DAYS = [
   "Saturday",
@@ -36,6 +46,7 @@ export default function Page() {
   const [loading, setLoading] = useState(false);
   const [filterDay, setFilterDay] = useState("All");
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
 
   const [form, setForm] = useState({
     course_id: "",
@@ -95,11 +106,14 @@ export default function Page() {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!confirm("Delete this routine slot?")) return;
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+
     try {
+      const id = deleteTarget.id;
       setDeletingId(id);
       await deleteRoutine(id);
+      setDeleteTarget(null);
       fetchData();
     } catch (err: any) {
       alert(err.message);
@@ -117,7 +131,41 @@ export default function Page() {
     "w-full rounded-xl border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-800 placeholder-gray-400 transition focus:border-[#2a7fba] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#2a7fba]/20";
 
   return (
-    <div className="min-h-screen bg-[#e9eef2] px-4 py-10 sm:px-6 lg:px-10">
+    <>
+      <Dialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open && deletingId === null) {
+            setDeleteTarget(null);
+          }
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete routine slot?</DialogTitle>
+            <DialogDescription>
+              This will remove the {deleteTarget?.day} routine slot for{" "}
+              {deleteTarget?.course_code || "this course"}.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <DialogClose asChild>
+              <Button variant="outline" disabled={deletingId !== null}>
+                Cancel
+              </Button>
+            </DialogClose>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={deletingId !== null}
+            >
+              {deletingId !== null ? "Deleting..." : "Delete"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <div className="min-h-screen bg-[#e9eef2] px-4 py-10 sm:px-6 lg:px-10">
       <div className="mx-auto max-w-6xl space-y-8">
 
         {/* ── Header ── */}
@@ -454,7 +502,7 @@ export default function Page() {
                     </td>
                     <td className="px-6 py-4 text-right">
                       <button
-                        onClick={() => handleDelete(routine.id)}
+                        onClick={() => setDeleteTarget(routine)}
                         disabled={deletingId === routine.id}
                         className="rounded-lg px-3 py-1.5 text-xs font-semibold text-red-500 transition hover:bg-red-50 active:scale-95 disabled:opacity-40"
                       >
@@ -535,7 +583,7 @@ export default function Page() {
                     </div>
                   </div>
                   <button
-                    onClick={() => handleDelete(routine.id)}
+                    onClick={() => setDeleteTarget(routine)}
                     disabled={deletingId === routine.id}
                     className="shrink-0 rounded-lg px-3 py-1.5 text-xs font-semibold text-red-500 transition hover:bg-red-50 disabled:opacity-40"
                   >
@@ -561,6 +609,7 @@ export default function Page() {
           </div>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

@@ -1,50 +1,154 @@
-import z from "zod";
 
-export const registerSchema = z.object({
-  name: z
-    .string()
-    .trim()
-    .min(1, "Name is required!")
-    .min(2, "Name must be at least 2 characters")
-    .max(255, "Name must not exceed 255 characters"),
-  username: z
-    .string()
-    .trim()
-    .min(3, "Username must be at least 3 characters long")
-    .max(255, "Username must not exceed 255 characters")
-    .regex(
-      /^[a-zA-Z0-9_-]+$/,
-      "Username can only contain letters, numbers, underscores, and hyphens",
-    ),
-  email: z
-  .email("Please inter a valid email")
+import { z } from "zod";
+
+const emailSchema = z
+  .string()
+  .email("Invalid email address")
+  .toLowerCase()
+  .trim();
+
+const passwordSchema = z
+  .string()
   .trim()
-  .max(255, "Email must not exceed 255 characters")
-  .toLowerCase(),
-
-  password:z
-  .string()
   .min(8, "Password must be at least 8 characters")
+  .max(100, "Password is too long")
+  .regex(/[A-Z]/, "Must contain at least one uppercase letter")
+  .regex(/[0-9]/, "Must contain at least one number");
+
+const fullNameSchema = z
+  .string()
+  .trim()
+  .min(2, "Full name must be at least 2 characters")
+  .max(100, "Full name is too long");
+
+const registrationSchema = z
+  .string()
+  .trim()
   .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-      "Password must contain at least one lowercase letter, one uppercase letter, and one number",
-    ),
+    /^\d{10}$/,
+    "Registration number must be exactly 10 digits",
+  );
 
-  confirmPassword:z
-  .string(),
-
-  bio: z
+const sessionSchema = z
   .string()
-  .optional(),
+  .trim()
+  .regex(
+    /^\d{4}-\d{2}$/,
+    "Session must be like 2022-23",
+  );
 
-  address: z
+const designationSchema = z
   .string()
-  .min(1, "Address is required")
+  .trim()
+  .min(2, "Designation is too short")
+  .max(50, "Designation is too long");
 
-  
-}).refine((data)=>data.password === data.confirmPassword,{
-  message: "Passwords do not match",
-  path: ["confirmPassword"],
-});
+export const createUserSchema = z
+  .object({
+    full_name: fullNameSchema,
 
-export type RegisterSchema = z.infer<typeof registerSchema>
+    email: emailSchema,
+
+    password: passwordSchema,
+
+    confirm_password: z
+      .string()
+      .trim()
+      .min(1, "Please confirm password"),
+
+    role: z.enum([
+      "student",
+      "teacher",
+      "admin",
+    ]),
+
+    registration_no:
+      registrationSchema.optional(),
+
+    session: sessionSchema.optional(),
+
+    semester: z.coerce
+      .number({
+        invalid_type_error:
+          "Semester must be a number",
+      })
+      .int("Semester must be an integer")
+      .min(
+        1,
+        "Semester must be between 1 and 8",
+      )
+      .max(
+        8,
+        "Semester must be between 1 and 8",
+      )
+      .optional(),
+
+    designation: designationSchema.optional(),
+  })
+
+  // .refine(
+  //   (data) =>
+  //     data.password === data.confirm_password,
+  //   {
+  //     path: ["confirm_password"],
+  //     message: "Passwords do not match",
+  //   },
+  // )
+
+  .superRefine((data, ctx) => {
+    if (data.role === "student") {
+      if (!data.registration_no) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["registration_no"],
+          message:
+            "Registration number is required for students",
+        });
+      }
+
+      if (!data.session) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["session"],
+          message:
+            "Session is required for students",
+        });
+      }
+
+      if (!data.semester) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["semester"],
+          message:
+            "Semester is required for students",
+        });
+      }
+    }
+
+    if (data.role === "teacher") {
+      if (!data.designation) {
+        ctx.addIssue({
+          code: "custom",
+          path: ["designation"],
+          message:
+            "Designation is required for teachers",
+        });
+      }
+    }
+  })
+
+  .transform((data) => ({
+    ...data,
+
+    registration_no:
+      data.registration_no || undefined,
+
+    session: data.session || undefined,
+
+    designation:
+      data.designation || undefined,
+  }));
+
+export type CreateUserInput = z.infer<
+  typeof createUserSchema
+>;
