@@ -13,6 +13,7 @@ export interface User {
   registration_no?: string | null;
   session?: string | null;
   semester?: string | null;
+  cgpa?: number | string | null;
   designation?: string | null;
 }
 

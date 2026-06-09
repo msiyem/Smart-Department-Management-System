@@ -18,13 +18,13 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bus Ticket Booking App",
+  title: "Department Management App",
   description:
-    "A bus ticket booking application built with Next.js and Tailwind CSS.",
-  // icons: {
-  //   icon: { url: "/logo_icon.png", type: "image/png" },
-  //   shortcut: "/logo.png",
-  // },
+    "A department management system built with React, Next.js, and Express. Manage students, teachers, courses, and notices with ease.",
+  icons: {
+    icon: { url: "/dept_icon.png", type: "image/png" },
+    // shortcut: "/logo.png",
+  },
 };
 
 export default async function RootLayout({

@@ -1,7 +1,5 @@
-import React from 'react'
+import TeacherAssignmentsPage from "./assignmentsClient-updated";
 
-export default function page() {
-  return (
-    <div>this is the teacher assignments page</div>
-  )
+export default function Page() {
+  return <TeacherAssignmentsPage />;
 }

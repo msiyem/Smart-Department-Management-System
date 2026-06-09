@@ -9,6 +9,7 @@ type AuthUser = {
   role: UserRole;
   full_name?: string;
   email: string;
+  profile_image?: string | null;
   exp?: number;
 };
 

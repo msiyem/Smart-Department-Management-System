@@ -8,14 +8,15 @@ import {
   Users,
   BookOpen,
   ClipboardList,
-  BarChart3,
   Bell,
   Calendar,
   GraduationCap,
   BookMarked,
   PenSquare,
   CheckSquare,
-  ChevronLeft,
+  ChevronRight,
+  PanelLeftClose,
+  PanelLeftOpen,
 } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -44,8 +45,11 @@ const NAV: Record<Role, NavItem[]> = {
 
   teacher: [
     { href: "/teacher", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/teacher/courses", label: "Courses", icon: BookOpen },
     { href: "/teacher/attendance", label: "Attendance", icon: CheckSquare },
     { href: "/teacher/assignments", label: "Assignments", icon: PenSquare },
+    { href: "/teacher/grading", label: "Grading", icon: ClipboardList },
+    { href: "/teacher/notices", label: "Notices", icon: Bell },
     // { href: "/teacher/results", label: "Results", icon: BarChart3 },
     { href: "/teacher/routine", label: "Routine", icon: Calendar },
   ],
@@ -79,17 +83,35 @@ export function Sidebar({
     <motion.aside
       animate={{ width: collapsed ? 70 : 240 }}
       transition={{ duration: 0.2 }}
-      className="h-full flex flex-col bg-sidebar border-r border-sidebar-border"
+      className="h-full flex flex-col bg-sidebar border-r border-sidebar-border shadow-sm"
     >
       {/* Logo */}
-      <div className="h-14 flex items-center px-3 border-b border-sidebar-border">
-        <GraduationCap className="h-5 w-5 text-primary" />
+      <div className="h-14 flex items-center gap-2 px-3 border-b border-sidebar-border">
+        <div className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-primary">
+          <GraduationCap className="h-5 w-5" />
+        </div>
 
         {!collapsed && (
-          <span className="ml-2 font-semibold text-sm">
+          <span className="min-w-0 flex-1 truncate font-semibold text-sm text-sidebar-foreground">
             DeptMS
           </span>
         )}
+
+        <button
+          onClick={() => onCollapse(!collapsed)}
+          className={cn(
+            "inline-flex size-8 items-center justify-center rounded-lg text-sidebar-foreground/70 transition hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+            collapsed && "mx-auto"
+          )}
+          title={collapsed ? "Open sidebar" : "Close sidebar"}
+          aria-label={collapsed ? "Open sidebar" : "Close sidebar"}
+        >
+          {collapsed ? (
+            <PanelLeftOpen className="h-4 w-4" />
+          ) : (
+            <PanelLeftClose className="h-4 w-4" />
+          )}
+        </button>
       </div>
 
       {/* Navigation */}
@@ -97,7 +119,7 @@ export function Sidebar({
         {items.map((item) => {
           const active =
             pathname === item.href ||
-            pathname.startsWith(item.href);
+            (item.href !== `/${role}` && pathname.startsWith(item.href));
 
           return (
             <Link
@@ -106,8 +128,8 @@ export function Sidebar({
               className={cn(
                 "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition",
                 active
-                  ? "bg-sidebar-accent text-sidebar-accent-foreground"
-                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/50"
+                  ? "bg-sidebar-accent text-sidebar-accent-foreground shadow-sm"
+                  : "text-sidebar-foreground/70 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground"
               )}
               title={collapsed ? item.label : undefined}
             >
@@ -130,15 +152,13 @@ export function Sidebar({
         })}
       </nav>
 
-      {/* Collapse Button */}
-      <button
-        onClick={() => onCollapse(!collapsed)}
-        className="border-t border-sidebar-border p-3 flex justify-center hover:bg-sidebar-accent/40"
-      >
-        <motion.div animate={{ rotate: collapsed ? 180 : 0 }}>
-          <ChevronLeft className="h-4 w-4" />
-        </motion.div>
-      </button>
+      <div className="border-t border-sidebar-border p-2 text-center text-xs text-sidebar-foreground/50">
+        {collapsed ? (
+          <ChevronRight className="mx-auto h-4 w-4" />
+        ) : (
+          "Smart Department"
+        )}
+      </div>
     </motion.aside>
   );
 }

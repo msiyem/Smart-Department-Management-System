@@ -1,7 +1,5 @@
 import { redirect } from "next/navigation";
 import { getUser } from "@/lib/auth/getUser";
-import RoleLayoutShell from "@/components/private/role-layout-shell";
-
 export default async function TeacherLayout({
   children,
 }: {
@@ -17,13 +15,5 @@ export default async function TeacherLayout({
     redirect(`/${user.role}`);
   }
 
-  return (
-    <RoleLayoutShell
-      role="teacher"
-      title="Teacher Dashboard"
-      description="Manage classes, attendance, coursework, and student activity from one place."
-    >
-      {children}
-    </RoleLayoutShell>
-  );
+  return <>{children}</>;
 }

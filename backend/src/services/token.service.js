@@ -21,6 +21,7 @@ export function generateAccessToken(user) {
       role: user.role,
       full_name: user.full_name,
       email: user.email,
+      profile_image: user.profile_image || null,
     },
     ACCESS_SECRET,
     { expiresIn: ACCESS_EXP || "15m" },

@@ -3,6 +3,7 @@ import cloudinary from '../config/cloudinary.js';
 import asyncHandler from '../utils/asyncHandler.js';
 import { ApiError, ApiResponse } from '../utils/apiHelpers.js';
 import bcrypt from 'bcrypt';
+import { uploadToCloudinary } from '../utils/cloudinaryUpload.js';
 
 export const createUser = asyncHandler(async (req, res) => {
   const {
@@ -36,10 +37,12 @@ export const createUser = asyncHandler(async (req, res) => {
 
   const hashedPassword = await bcrypt.hash(password, 10);
 
+  // ✅ START TRANSACTION
   const conn = await pool.getConnection();
   await conn.beginTransaction();
 
   try {
+    // 1. create user
     const [userResult] = await conn.query(
       `INSERT INTO users (full_name, email, password, role)
        VALUES (?, ?, ?, ?)`,
@@ -50,6 +53,7 @@ export const createUser = asyncHandler(async (req, res) => {
 
     let studentId = null;
 
+    // 2. create student
     if (role === "student") {
       if (!registration_no || !session || !semester) {
         throw new ApiError(
@@ -66,11 +70,13 @@ export const createUser = asyncHandler(async (req, res) => {
 
       studentId = studentResult.insertId;
 
+      // 3. get courses for that semester
       const [courses] = await conn.query(
         `SELECT id FROM courses WHERE semester = ?`,
         [semester]
       );
 
+      // 4. bulk enroll
       if (courses.length > 0) {
         const enrollValues = courses.map((c) => [
           studentId,
@@ -85,6 +91,7 @@ export const createUser = asyncHandler(async (req, res) => {
       }
     }
 
+    // 5. create teacher
     if (role === "teacher") {
       await conn.query(
         `INSERT INTO teachers (user_id, designation)
@@ -150,8 +157,15 @@ export const updateProfileImage = asyncHandler(async (req, res) => {
     if (publicId) await cloudinary.uploader.destroy(publicId).catch(() => { });
   }
 
-  await pool.query('UPDATE users SET profile_image = ? WHERE id = ?', [req.file.path, req.user.id]);
-  return res.json(new ApiResponse(200, 'Profile image updated.', { profile_image: req.file.path }));
+  const result = await uploadToCloudinary(
+    req.file.buffer,
+    'dept-mgmt/profiles',
+    'image',
+    req.file.originalname,
+  );
+
+  await pool.query('UPDATE users SET profile_image = ? WHERE id = ?', [result.secure_url, req.user.id]);
+  return res.json(new ApiResponse(200, 'Profile image updated.', { profile_image: result.secure_url }));
 });
 
 export const updateProfile = asyncHandler(async (req, res) => {

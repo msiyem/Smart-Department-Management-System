@@ -7,8 +7,6 @@ import Image from "next/image";
 
 import deptDark from "../../../public/dept-text-dark.png";
 import deptLight from "../../../public/dept-text-light.png";
-import maleAvatar from "../../../public/male-avater.png";
-import femaleAvatar from "../../../public/female-avater.png";
 
 import { ModeToggle } from "./mode-toggle";
 
@@ -21,17 +19,19 @@ import {
   DropdownMenuTrigger,
 } from "../ui/dropdown-menu";
 
-import { ChevronDown, Settings, User, UserRound } from "lucide-react";
+import { ChevronDown, Settings, User } from "lucide-react";
 import { Button } from "../ui/button";
+import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useAuthModalStore } from "@/store/auth-modal-store";
 import { refreshSession } from "@/action/session.action";
 import { logout } from "@/action/auth.action";
 
 type AuthUser = {
-  id: string;
+  id: string | number;
   role: "student" | "teacher" | "admin";
   email: string;
   full_name?: string;
+  profile_image?: string | null;
   gender?: "male" | "female" | "other";
 };
 
@@ -55,17 +55,14 @@ export default function NavbarClient({
   }, [refreshed]);
 
   const isLoggedIn = !!user;
+  const initials =
+    user?.full_name
+      ?.split(" ")
+      .map((part) => part[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "U";
 
-  // const getUserInitials = () => {
-  //   if (!user?.name) return "U";
-
-  //   return user.name
-  //     .split(" ")
-  //     .map((n) => n[0])
-  //     .join("")
-  //     .toUpperCase()
-  //     .slice(0, 2);
-  // };
 
   return (
     <div className="fixed inset-x-0 top-0 z-50 flex h-16 items-center justify-between border-b border-border bg-emerald-50/90 dark:bg-emerald-800/70 backdrop-blur-md px-4">
@@ -110,39 +107,54 @@ export default function NavbarClient({
               {user?.full_name ? (
                 <div
                   title={user.full_name}
-                  className="flex items-center gap-2 cursor-pointer border border-ring h-10 px-2 rounded-md max-w-33.5"
+                  className="flex h-10 max-w-48 cursor-pointer items-center gap-2 rounded-md border border-ring px-2"
                 >
-                  <div className="w-6 h-6 border border-gray-300 rounded-sm relative bg-gray-300 flex items-center justify-center overflow-hidden shrink-0">
-                    {user?.gender === "male" ? (
-                      <Image
-                        src={maleAvatar}
-                        alt="Male Avatar"
-                        width={24}
-                        height={24}
-                        className="object-cover"
-                      />
-                    ) : user?.gender === "female" ? (
-                      <Image
-                        src={femaleAvatar}
-                        alt="Female Avatar"
-                        width={24}
-                        height={24}
-                        className="object-cover"
-                      />
-                    ) : (
-                      <UserRound className="w-4 h-4 text-gray-500" />
-                    )}
-                  </div>
+                  <Avatar className="size-7 rounded-md">
+                    <AvatarImage
+                      src={user.profile_image ?? undefined}
+                      alt={user.full_name}
+                    />
+                    <AvatarFallback className="rounded-md text-xs">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
 
-                  <div className="truncate text-sm font-bold">{user.full_name}</div>
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-bold leading-4">
+                      {user.full_name}
+                    </div>
+                    <div className="truncate text-[11px] capitalize text-muted-foreground">
+                      {user.role}
+                    </div>
+                  </div>
 
                   <ChevronDown className="w-3 h-3 text-gray-500 shrink-0" />
                 </div>
               ) : null}
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuLabel>{user?.full_name || "User"}</DropdownMenuLabel>
+            <DropdownMenuContent align="end" className="w-64">
+              <DropdownMenuLabel>
+                <div className="flex min-w-0 items-center gap-3">
+                  <Avatar className="size-10 rounded-md">
+                    <AvatarImage
+                      src={user?.profile_image ?? undefined}
+                      alt={user?.full_name || "User"}
+                    />
+                    <AvatarFallback className="rounded-md">
+                      {initials}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-semibold text-foreground">
+                      {user?.full_name || "User"}
+                    </p>
+                    <p className="truncate text-xs font-normal text-muted-foreground">
+                      {user?.email}
+                    </p>
+                  </div>
+                </div>
+              </DropdownMenuLabel>
 
               <DropdownMenuSeparator />
 

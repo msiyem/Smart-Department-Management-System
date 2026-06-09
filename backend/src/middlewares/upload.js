@@ -26,6 +26,8 @@ const assignmentFilter = (req, file, cb) => {
     'application/pdf',
     'application/msword',
     'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    'text/plain',
     'image/jpeg',
     'image/png',
     'application/zip',

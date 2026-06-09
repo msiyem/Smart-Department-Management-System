@@ -1,5 +1,6 @@
 "use client";
 
+import { API_URL } from "@/lib/const";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -25,7 +26,7 @@ export default function Page() {
     const fetchDashboard = async () => {
       try {
         const res = await fetch(
-          `${process.env.NEXT_PUBLIC_API_URL}/dashboard/admin`,
+          `${API_URL}/dashboard/admin`,
           {
             credentials: "include",
           }
