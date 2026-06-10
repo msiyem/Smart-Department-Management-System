@@ -14,6 +14,7 @@ router.use(protect);
 // Own profile
 router.patch('/profile',       updateProfile);
 router.patch('/profile/image', uploadProfile.single('profile_image'), updateProfileImage);
+router.delete('/',             deleteUser);
 
 // Admin only
 router.post("/", authorize("admin"), createUser);

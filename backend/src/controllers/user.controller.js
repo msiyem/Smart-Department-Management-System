@@ -184,6 +184,28 @@ export const deleteUser = asyncHandler(async (req, res) => {
   return res.json(new ApiResponse(200, 'User deleted.'));
 });
 
+export const deleteMyAccount = asyncHandler(async (req, res) => {
+  const userId = req.user.id;
+
+  const [[user]] = await pool.query(
+    "SELECT id FROM users WHERE id = ?",
+    [userId]
+  );
+
+  if (!user) {
+    throw new ApiError(404, "User not found.");
+  }
+
+  await pool.query(
+    "DELETE FROM users WHERE id = ?",
+    [userId]
+  );
+
+  return res.json(
+    new ApiResponse(200, "Account deleted successfully.")
+  );
+});
+
 function extractPublicId(url) {
   try {
     const parts = url.split('/');
