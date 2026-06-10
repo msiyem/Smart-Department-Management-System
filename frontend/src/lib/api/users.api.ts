@@ -47,3 +47,12 @@ export async function deleteUser(id: number) {
 
   return res.json();
 }
+
+export async function deleteMyAccount() {
+  const res = await fetch(`${API}/users/`, {
+    method: "DELETE",
+    credentials: "include",
+  });
+
+  return res.json();
+}

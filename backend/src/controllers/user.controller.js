@@ -196,6 +196,10 @@ export const deleteMyAccount = asyncHandler(async (req, res) => {
     throw new ApiError(404, "User not found.");
   }
 
+  res.clearCookie("accessToken");
+  res.clearCookie("refreshToken");
+  res.clearCookie("sessionId");
+
   await pool.query(
     "DELETE FROM users WHERE id = ?",
     [userId]

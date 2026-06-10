@@ -3,6 +3,7 @@ import {
   getAllUsers, toggleUserStatus, updateProfileImage,
   updateProfile, deleteUser,
   createUser,
+  deleteMyAccount,
 } from '../controllers/user.controller.js';
 import { protect, authorize } from '../middlewares/auth.js';
 import { uploadProfile } from '../middlewares/upload.js';
@@ -14,7 +15,7 @@ router.use(protect);
 // Own profile
 router.patch('/profile',       updateProfile);
 router.patch('/profile/image', uploadProfile.single('profile_image'), updateProfileImage);
-router.delete('/',             deleteUser);
+router.delete('/',             deleteMyAccount);
 
 // Admin only
 router.post("/", authorize("admin"), createUser);
